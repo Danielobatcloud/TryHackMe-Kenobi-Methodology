@@ -1,0 +1,46 @@
+# Penetration Test Report
+
+**Target:** TryHackMe — Kenobi
+**Classification:** Practice / Training Engagement
+
+---
+
+## 1. Executive Summary
+
+This engagement targeted the Kenobi machine, a Linux host used for training purposes on TryHackMe. Testing identified a critical remote code execution path via an outdated FTP service, which was chained with an SSH key disclosure and a local privilege escalation flaw to achieve full root-level compromise. The environment's overall security posture was weak, with multiple independently exploitable issues across network services and host configuration.
+
+## 2. Scope & Objectives
+
+The assessment covered a single host (Kenobi) over its exposed network services (FTP, SSH, HTTP, SMB, NFS, RPC). The objective was to identify and exploit vulnerabilities to gain unauthorized access and escalate privileges to root, then document the attack path and remediation steps.
+
+## 3. Methodology
+
+- **Reconnaissance:** full-port nmap scan to identify exposed services.
+- **Enumeration:** SMB share and user enumeration; NFS export discovery; FTP service fingerprinting.
+- **Exploitation:** abused a ProFTPD `mod_copy` flaw to copy the target's SSH private key to a retrievable location.
+- **Access:** authenticated over SSH using the recovered key to obtain a foothold as a low-privileged user.
+- **Privilege Escalation:** exploited a custom SUID binary with unqualified command paths (PATH hijacking) to obtain a root shell.
+
+## 4. Key Findings
+
+| Issue | Severity | Impact |
+|---|---|---|
+| Anonymous SMB share access | Medium | Disclosed internal service details used to plan the attack. |
+| Outdated ProFTPD 1.3.5 (mod_copy) | Critical | Unauthenticated server-side file copy led to SSH key theft. |
+| World-readable SSH private key | High | Enabled direct authentication once the key was retrieved. |
+| SUID binary with unqualified PATH calls | Critical | Allowed PATH hijacking to escalate to root. |
+
+## 5. Recommendations
+
+- Patch or replace outdated ProFTPD; disable unused modules such as `mod_copy`.
+- Restrict SMB/NFS access to authenticated, authorized hosts only; disable anonymous shares.
+- Restrict permissions on private key files to the owning account (mode `600`).
+- Remove unnecessary SUID bits and hardcode absolute paths in any privileged binaries.
+
+## 6. Conclusion
+
+The Kenobi engagement demonstrates a complete attack chain from initial network exposure to root-level compromise, driven by outdated software, weak file permissions, and insecure binary design. Addressing the recommendations above would close each stage of the chain and significantly raise the effort required for compromise.
+
+---
+
+*Prepared for personal portfolio / training documentation purposes.*
